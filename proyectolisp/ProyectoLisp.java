@@ -4,10 +4,13 @@ import com.sun.javafx.scene.control.skin.VirtualFlow;
 import controlador.CreateList;
 import controlador.controladorComandos;
 import controlador.controladorLisp;
+import controlador.tryEvaluate;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.List;
+import modelo.FunctionModel;
+import modelo.VariableModel;
 import modelo.modeloLisp;
 
 /**
@@ -19,11 +22,14 @@ public class ProyectoLisp {
     public static void main(String[] args) {
         modeloLisp mL = new modeloLisp();
         controladorLisp cL = new controladorLisp(mL);
+        tryEvaluate tE = new tryEvaluate();
 
         //System.out.println(CreateList.parse(Resultado().toLowerCase()));
             List<Object> list = CreateList.parse(Resultado().toLowerCase());
             System.out.println(list);
-            System.out.println(cL.evaluate(list));
+            VariableModel variable = new VariableModel();
+            FunctionModel functions = new FunctionModel();
+            System.out.println(tE.evaluate(list, variable, functions));
         //controladorComandos cM = new controladorComandos();
         //List<String> list = cL.intento(Resultado());
         

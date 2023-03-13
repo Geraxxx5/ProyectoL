@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Vector;
 import modelo.Ayuda;
 import modelo.Function;
+import modelo.FunctionModel;
 import modelo.Stack;
 import modelo.VariableModel;
 import modelo.modeloLisp;
@@ -18,6 +19,7 @@ public class controladorLisp {
     controladorComandos commandControl = new controladorComandos();
     List<List<String>> list = new ArrayList<>();
     VariableModel variable = new VariableModel();
+    FunctionModel functions = new FunctionModel();
     
     public controladorLisp(modeloLisp lispModel){
         this.lispModel = lispModel;
@@ -184,7 +186,7 @@ public class controladorLisp {
     }
     
     public List<String> hacerLista(String what){
-        what = what.replace("(", " ( ").replace(")", " ) ").trim();
+        what = what.replace("(", " ( ").replace(")", " ) ").replace("\'", " \' ").trim();
         return Arrays.asList(what.split(" "));
     }
     
@@ -219,9 +221,10 @@ public class controladorLisp {
                 }
                 System.out.println(listaExpresion);
                 String oper = (String) listaExpresion.get(0);
-                System.out.println(oper);
+                System.out.println("opeeeerrrr: "+oper);
+                System.out.println(functions.funcionExist(oper));
                 if(lispModel.getCommand().contains(oper)){
-                    if(oper.equals("quote")){
+                    if(oper.equals("quote") || oper.equals("\'")){
                         return listaExpresion.get(1);
                     }
                     else if(oper.equals("eval")){
@@ -242,7 +245,7 @@ public class controladorLisp {
                         if(listaExpresion.get(1) instanceof String){
                             String variableName = (String) listaExpresion.get(1);
                             if(listaExpresion.get(2) instanceof Integer){
-                                List<String> varibaleValue = new ArrayList<>();
+                                List<Object> varibaleValue = new ArrayList<>();
                                 varibaleValue.add(String.valueOf(listaExpresion.get(2)));
                                 variable.createNewVariable(variableName, varibaleValue);
                                 System.out.println(variable.getVariables().containsKey(variableName));
@@ -262,7 +265,34 @@ public class controladorLisp {
                     }else if(oper.equals("cond")){
                         System.out.println("Esto entra a cond "+listaExpresion);
                         if(listaExpresion.size() == 2){
+                            String returnIfTrue = "";
                             System.out.println("Son dos");
+                            List<Object> condition = (List<Object>) listaExpresion.get(1);
+                            System.out.println(condition.get(0));
+                            System.out.println("Tamanio: "+condition.size());
+                            String resultCondition;
+                            if(condition.size() == 2){
+                                List<Object> evaluateCondition = (List<Object>) condition.get(0);
+                                resultCondition = String.valueOf(evaluate(evaluateCondition));
+                                Object returnIfTrueCondition = condition.get(1);
+                                if(returnIfTrueCondition instanceof String){
+                                    returnIfTrue = String.valueOf(symbolEvaluate(returnIfTrueCondition));
+                                }else{
+                                    List<Object> express = (List<Object>) returnIfTrueCondition;
+                                    returnIfTrue = String.valueOf(evaluate(express));
+                                }
+                            }else{
+                                resultCondition = String.valueOf(evaluate(condition));
+                            }
+                            System.out.println(resultCondition);
+                            if(resultCondition == "T"){
+                                if(returnIfTrue.equals("")){
+                                    returnIfTrue = "T";
+                                }
+                                return returnIfTrue;
+                            }else{
+                                return "Nil";
+                            }
                         }else if(listaExpresion.size() == 3){
                             String returnIfTrue = "";
                             String resultCondition = "";
@@ -297,7 +327,35 @@ public class controladorLisp {
                             }else{
                                 return returnIfFalse;
                             }
-                            
+                        }
+                    }else if(oper.equals("list")){
+                        System.out.println("Entro a lista");
+                        List<Object> list = new ArrayList<>();
+                        System.out.println("Lsita: "+listaExpresion);
+                        for(int index = 1;index<listaExpresion.size();){
+                            Object toDoList = listaExpresion.get(index);
+                            Object forListadd;
+                            if(toDoList instanceof List){
+                                List<Object> forEvaluate = (List<Object>) toDoList;
+                                forListadd = evaluate(forEvaluate);
+                            }else{
+                                forListadd = toDoList;
+                            }
+                            list.add(forListadd);
+                            index++;
+                        }
+                        return list;
+                    }else if(oper.equals("defun")){
+                        System.out.println("Si se crea");
+                        System.out.println(listaExpresion);
+                        String nameOfFunction = String.valueOf(listaExpresion.get(1));
+                        if(!functions.funcionExist(nameOfFunction)){
+                            List<Object> attributes = new ArrayList<>();
+                            attributes.add(listaExpresion.get(2));
+                            attributes.add(listaExpresion.get(3));
+                            functions.createNewFunction(nameOfFunction, attributes);
+                        }else{
+                            throw new RuntimeException("Function alredy exist");
                         }
                     }
                 }else if(lispModel.getOperators().contains(oper)){
@@ -312,7 +370,8 @@ public class controladorLisp {
                     }else{
                         //res1 = (double) value1;
                         if(value1 instanceof String){
-                            res1 = (double) symbolEvaluate(value1);
+                            res1 = Double.parseDouble(String.valueOf(symbolEvaluate(value1)));
+                            System.out.println("res1: "+res1);
                         }else{
                             res1 = Double.parseDouble(String.valueOf(value1));
                         }
@@ -324,8 +383,9 @@ public class controladorLisp {
                         res2 = Double.parseDouble(String.valueOf(evaluate(v)));
                     }else{
                         //res2 = (double) value2;
-                        if(value1 instanceof String){
-                            res2 = (double) symbolEvaluate(value2);
+                        if(value2 instanceof String){
+                            res2 = Double.parseDouble(String.valueOf(symbolEvaluate(value2)));
+                            System.out.println("res2: "+res2);
                         }else{
                             res2 = Double.parseDouble(String.valueOf(value2));
                         }
@@ -354,11 +414,14 @@ public class controladorLisp {
                     String value2 = String.valueOf(symbolEvaluate(listaExpresion.get(2)));
                     switch(oper){
                         case"=":
+                            System.out.println("Son iguales en las condicionales");
                             return value1.equals(value2);
                         case"<":
                             if(value1.compareTo(value2) < 0){
+                                System.out.println("Es true en las condicionales");
                                 return "T";
                             }else{
+                                System.out.println("Es false en las condicionales");
                                 return "Nil";
                             }
                         case">":
@@ -369,11 +432,63 @@ public class controladorLisp {
                             }
                         case"equal":
                             return value1.equals(value2);
-                        
-                            
+                        default:
+                            throw new RuntimeException("Eror: unexpected"); 
                    }
+                //Aqui van las variables
+                }else if(functions.funcionExist(oper)){
+                    VariableModel varsFunction = new VariableModel();
+                    List<Object> params = functions.getParams(oper);
+                    List<Object> condition = functions.getCondition(oper);
+                    //List<boolean>
+                    System.out.println("exprrrrr aqui: "+listaExpresion);
+                    for(int index = 0;index<params.size();index++){
+                        String var = (String) params.get(index);
+                        System.out.println("Entro al for");
+                        if(varsFunction.varibaleExist(var)){
+                            Object expressionToEvaluate = listaExpresion.get(1+index);
+                            String toSave = "";
+                            if(expressionToEvaluate instanceof List){
+                                List<Object> toEvaluate = (List<Object>) expressionToEvaluate;
+                                toSave = String.valueOf(evaluate(toEvaluate));
+                            }else{
+                                toSave = String.valueOf(expressionToEvaluate);
+                            }
+                            System.out.println("Estoy intentado guardar esto: "+toSave);
+                            varsFunction.getVariables().get(var).add(toSave);
+                        }else{
+                            List<Object> value = new ArrayList<>();
+                            Object expressionToEvaluate = listaExpresion.get(1+index);
+                            String toSave = "";
+                            if(expressionToEvaluate instanceof List){
+                                List<Object> toEvaluate = (List<Object>) expressionToEvaluate;
+                                toSave = String.valueOf(evaluate(toEvaluate));
+                            }else{
+                                toSave = String.valueOf(expressionToEvaluate);
+                            }
+                            System.out.println("Estoy intentado guardar esto: "+toSave);
+                            value.add(toSave);
+                            varsFunction.createNewVariable(var,value);
+                        }
+                    }
+                    Object response = evaluate(condition);
+                    boolean isFinish = true;
+                    for(int index = 0;index<params.size();index++){
+                        String var = (String) params.get(index);
+                        Object expressionToEvaluate = listaExpresion.get(1+index);
+                        String toSave = "";
+                        if(expressionToEvaluate instanceof List){
+                            List<Object> toEvaluate = (List<Object>) expressionToEvaluate;
+                            toSave = String.valueOf(evaluate(toEvaluate));
+                        }else{
+                            toSave = String.valueOf(expressionToEvaluate);
+                        }
+                        if(!variable.peekVariable(var).equals(toSave)){
+                            variable.removeTempValue(var);
+                        }
+                    }
+                    return response;
                 }
-                
             }else{
                 return symbolEvaluate(first);
             } 
@@ -388,7 +503,8 @@ public class controladorLisp {
             if(symbol instanceof String){
                 String var = (String) symbol;
                 if(variable.varibaleExist(var)){
-                    return Double.parseDouble(variable.lastValue(var)); 
+                    System.out.println("Se esta intentado parsear: "+variable.lastValue(var));
+                    return Double.parseDouble(String.valueOf(variable.lastValue(var))); 
                 }else{
                     throw new RuntimeException("Variable don't exist: "+var); 
                 }

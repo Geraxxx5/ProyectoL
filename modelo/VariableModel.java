@@ -13,9 +13,9 @@ import java.util.List;
  * @author Gerax
  */
 public class VariableModel {
-    HashMap<String, List<String>> variable = new HashMap<>();
+    HashMap<String, List<Object>> variable = new HashMap<>();
     
-    public void createNewVariable(String name, List<String> Value){
+    public void createNewVariable(String name, List<Object> Value){
         variable.put(name, Value);
     }
     
@@ -27,15 +27,19 @@ public class VariableModel {
         return variable.containsKey(name);
     }
     
-    public String lastValue(String key){
+    public Object lastValue(String key){
         return variable.get(key).get(variable.get(key).size()-1);
     }
     
     public void removeTempValue(String name){
-        variable.get(name).remove(1);
+        variable.get(name).remove(variable.size() -1);
     }
     
-    public HashMap<String, List<String>> getVariables(){
+    public Object peekVariable(String key){
+        return variable.get(key).get(variable.get(key).size());
+    }
+    
+    public HashMap<String, List<Object>> getVariables(){
         return variable;
     }
     

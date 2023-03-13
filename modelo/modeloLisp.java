@@ -15,7 +15,7 @@ import java.util.List;
  */
 public class modeloLisp {
     public List<Object> list = new ArrayList<>();
-    List<String> comandos = Arrays.asList("quote","atom","eval","setq","defvar","cond");
+    List<String> comandos = Arrays.asList("quote","atom","eval","setq","defvar","cond","\'","list","defun");
     List<String> operators = Arrays.asList("+","-","/","*","^");
     List<String> conditionals = Arrays.asList("=","<",">","equal");
     
